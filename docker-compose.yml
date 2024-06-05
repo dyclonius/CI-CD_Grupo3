@@ -1,0 +1,50 @@
+services:
+  # myfacturacion es el contenedor para backend
+  myfacturacion:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_USER=carlos
+      - MONGO_PASSWORD=123
+      - MONGO_DB=facturacion_db
+    networks:
+      - red-poli
+    volumes:
+      - ./backend:/app/backend
+  
+  # portal es el contenedor para frontend
+  portal:
+    build: ./frontend
+    ports:
+      - "80:80"
+    networks:
+      - red-poli
+    volumes:
+      - ./frontend:/app/frontend
+
+  # contenedor de mongo para la base de datos
+  mongo:
+    image: mongo
+    container_name: dbfacturacion
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: carlos
+      MONGO_INITDB_ROOT_PASSWORD: 123
+      MONGO_INITDB_DATABASE: facturacion_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - red-poli
+
+networks:
+  red-poli:
+    driver: bridge
+
+volumes:
+  mongo_data:
