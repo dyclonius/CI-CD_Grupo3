@@ -1,0 +1,113 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'contenedor', defaultValue: 'backendContable', description: 'Nombre del contenedor')
+        string(name: 'puertoHost', defaultValue: '5000', description: 'Puerto del host')
+        string(name: 'puertoContenedor', defaultValue: '5000', description: 'Puerto del contenedor')
+        string(name: 'red', defaultValue: 'ci-cd_grupo3_red-poli', description: 'Nombre de la red Docker')
+    }
+
+    stages {
+        stage('Verificar contenedor') {
+            steps {
+                script {
+                    // Verificar si el contenedor está en ejecución
+                    def containerExists = sh(script: "docker ps -a --filter name=${params.contenedor} --format '{{.Names}}'", returnStdout: true).trim()
+                    echo "Verificando contenedor: ${containerExists}"
+                    if (containerExists) {
+                        echo 'El contenedor ya existe'
+                        // Detener el contenedor si existe
+                        try {
+                            sh "docker stop ${params.contenedor}"
+                        } catch (Exception e) {
+                            echo 'No se pudo detener el contenedor.'
+                        }
+                        // Eliminar el contenedor si existe
+                        try {
+                            sh "docker rm ${params.contenedor}"
+                        } catch (Exception e) {
+                            echo 'No se pudo eliminar el contenedor.'
+                        }
+                    } else {
+                        echo 'El contenedor no existe'
+                    }
+                }
+            }
+        }
+        stage('Crear red') {
+            steps {
+                script {
+                    // Verificar si la red existe
+                    def networkExists = sh(script: "docker network ls --filter name=${params.red} --format '{{.Name}}'", returnStdout: true).trim()
+                    echo "Verificando red: ${networkExists}"
+                    if (networkExists.contains(params.red)) {
+                        echo "La red ${params.red} ya existe"
+                    } else {
+                        echo "Creando la red ${params.red}"
+                        def createNetworkOutput = sh(script: "docker network create ${params.red}", returnStdout: true, returnStatus: true)
+                        echo "Salida de la creación de la red: ${createNetworkOutput}"
+                        // Verificar la red
+                        if (createNetworkOutput != 0) {
+                            error "Error al crear la red ${params.red}"
+                        } else {
+                            networkExists = params.red // Actualizamos el valor de networkExists
+                            echo "La red ${params.red} fue creada exitosamente"
+                        }
+                    }
+                }
+            }
+        }
+        stage('Construir imagen') {
+            steps {
+                // Construir la imagen utilizando el Dockerfile
+                sh 'docker build -t integracioncontinua-myfacturacion ./backend'
+            }
+        }
+        stage('Verificar red') {
+            steps {
+                script {
+                    // Verificar si la red ya existe para usar en el contenedor
+                    def networkExists = sh(script: "docker network ls --filter name=${params.red} --format '{{.Name}}'", returnStdout: true).trim()
+                    echo "Verificando red: ${networkExists}"
+                    if (networkExists.contains(params.red)) {
+                        echo "La red ${params.red} existe"
+                    } else {
+                        error "La red ${params.red} no está disponible"
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                // Ejecutar el contenedor utilizando la imagen y la red
+                sh "docker run -d -p ${params.puertoHost}:${params.puertoContenedor} --network ${params.red} --name ${params.contenedor} integracioncontinua-myfacturacion"
+            }
+        }
+        stage('Esperar-backend-disponible') {
+            steps {
+                script {
+                    echo "Esperar 20 segundos"
+                    sleep(time: 20, unit: 'SECONDS')
+                }
+            }
+        }
+        stage('Test Backend') {
+            steps {
+                script {
+                    try {
+                        def response = sh(script: 'curl -v -s -o /dev/null -w "%{http_code}" http://backendContable:5000/partidas/1', returnStdout: true).trim()
+                        if (response == '200') {
+                            echo "Solicitud existosa, código ${response}"
+                        } else {
+                            error "Solicitud fallida, código ${response}"
+                        }
+                    } catch (Exception ex) {
+                        error "Ocurrio un error: ${ex.message}"
+                    }
+                }
+            }
+        }
+    }
+    
+}

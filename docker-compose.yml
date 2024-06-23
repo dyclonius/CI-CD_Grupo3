@@ -1,50 +1,96 @@
 services:
-  # myfacturacion es el contenedor para backend
-  myfacturacion:
-    build: .
+  #cola de servicio con rabbitmq
+  rabbitmq:
+    build: ./rabbitmq
+    container_name: rabbitmq
     ports:
-      - "5000:5000"
-    depends_on:
-      - mongo
+      - "5672:5672"
+      - "15672:15672"
+      #variables de entorno para conexion del gnerador y consumidor
     environment:
-      - MONGO_HOST=mongo
-      - MONGO_PORT=27017
-      - MONGO_USER=carlos
-      - MONGO_PASSWORD=123
-      - MONGO_DB=facturacion_db
+      RABBITMQ_DEFAULT_USER: cicdG3
+      RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - red-poli
-    volumes:
-      - ./backend:/app/backend
-  
-  # portal es el contenedor para frontend
-  portal:
-    build: ./frontend
-    ports:
-      - "80:80"
-    networks:
-      - red-poli
-    volumes:
-      - ./frontend:/app/frontend
-
-  # contenedor de mongo para la base de datos
+  #base de datos NoSql en mongo
   mongo:
-    image: mongo
-    container_name: dbfacturacion
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: carlos
-      MONGO_INITDB_ROOT_PASSWORD: 123
-      MONGO_INITDB_DATABASE: facturacion_db
+    #construimos desde la ruta
+    build: ./mongo
+    #especificamos el nombre del contenedor de mongo
+    container_name: dbContable
+
     ports:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
     networks:
       - red-poli
+  # portal es el contenedor para frontend
+  portal:
+    #ruta donde se encuentra Dockerfile para la contruccion del front
+    build: ./frontend
+    container_name: frontendContable
+    ports:
+      - "80:80"
+    networks:
+      - red-poli
+    volumes:
+      - ./frontend:/app/frontend
+  # contenedor de mongo para la base de datos
+  # contenedor Jenkins
+  jenkins:
+    build: ./Jenkins
+    container_name: jenkins-server-contable
+    user: root
+    ports:
+      - "8080:8080"    # Puerto interfaz Jenkins
+      - "50000:50000"  # Puerto agentes de Jenkins
+    restart: on-failure
+    volumes:
+      - jenkins_home:/var/jenkins_home  # datos
+      - /var/run/docker.sock:/var/run/docker.sock #ruta docker
+    networks:
+      - red-poli
+  # myfacturacion es el contenedor para backend
+  myfacturacion:
+    #hacer el build desde el directorio backend en esta ruta se encuentra el Dockerfile del backend
+    build: ./backend
+    #Mapear el puerto 5000 del host con el puerto 5000 del contenedor 
+    ports:
+      - "5000:5000"
+    container_name: backendContable
+    # Se especifica el orden de ejecución, la ejecución del app flask depende de que ya
+    # esta arriba el contenedor de mongo
+    depends_on:
+      - mongo
+      - rabbitmq
+    #Variables de entorno, para conexion con la base de datos y rabbitmq
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+      - MONGO_USER=carlos
+      - MONGO_PASSWORD=123
+      - MONGO_DB=dbContable
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=cicdG3
+      - RABBITMQ_PASS=password
+    # Especificamos que el contenedor se encuentra en la red docker "red-poli"
+    networks:
+      - red-poli
+    #esoecificamos un volumen del contenedor en el host
+    volumes:
+      - ./backend:/app/backend
 
+#Creamos la red interna docker "red-poli"
 networks:
   red-poli:
+    #Especificar el modo de operación de la red
     driver: bridge
 
+# definimos el volume para el contendor mongo, rabbitmq y jenkins
 volumes:
   mongo_data:
+  jenkins_home:
+  rabbitmq_data:

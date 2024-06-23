@@ -1,26 +1,129 @@
-body {
-    font-family: Arial, sans-serif;
+.header{
+    display:flex;
+    flex-direction: column;
+    justify-content:center;
+    background-color:#1348b9;
+    color: floralwhite;
+}
+.header h1{
+    font-size: 3vmin;
+    text-align: center;
+}
+.header img{
+    display: flex;
+    height: 30vmax;
+    border-radius: 1vmin;
+}
+.pestanas{
+    margin: 5vmin;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.registroFactura{
+    display: flex;
+    flex-direction: column;
+}
+.modal-body {
+    max-height: 500px;
+    overflow-y: auto;
+}
+table {
+    width: 100%;
+}
+th, td {
+    text-align: center;
+    vertical-align: middle;
+}
+th {
+    background-color: #f8f9fa;
+}
+.table-responsive {
+    width: 100%;
+}
+#partidasTable th {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.total-partidas {
+    margin-top: 20px;
+    font-weight: bold;
+    text-align: right;
+}
+.footer {
+    background-color: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #e7e7e7;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-section {
+    flex: 1;
+    text-align: left;
+    margin: 10px;
+}
+
+.footer-section h4 {
+    margin-bottom: 10px;
+}
+
+.footer-section p {
     margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
 }
 
-h2, p {
+.footer-section:nth-child(2) {
     text-align: center;
 }
 
-.home-buttons {
-    text-align: center;
+.footer-section:nth-child(3) {
+    text-align: right;
+}
+
+.social-icon {
+    margin: 0 10px;
+    width: 24px;
+    height: 24px;
+}
+
+.footer-links {
     margin-top: 20px;
 }
 
-.home-buttons button {
-    padding: 10px 20px;
+.footer-links a {
     margin: 0 10px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    cursor: pointer;
+    color: #000;
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+#opciones{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+#opciones img{
+    width: 7vmax;
+    margin-top: 2vmin;
+    justify-content: center;
+}
+#gestiona{
+    padding-top: 2vmin;
+    padding-left: 3vmin;
 }
 
 

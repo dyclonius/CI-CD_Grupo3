@@ -1,3 +1,6 @@
+#Especificamos que archivos ignorar en la constucción del contenedor, útil para el desarrollo futuro.
 node_modules
-.git
-.gitignore
+
+#por revisar más adelante 
+## .git
+## .gitignore
