@@ -79,20 +79,20 @@ pipeline {
         stage("Integration Test") {
             steps {
                
-                   sh  "curl http:\\localhost"
+                   sh  "curl http://localhost"
                 
             }
         }
         
         stage("Stop Containers") {
             steps {
-               
+               script {
                      try {
                             sh "docker stop ${params.contenedor}"
                         } catch (Exception e) {
                             echo 'No se pudo detener el contenedor.'
                         }
-                
+                }
             }
         }
     }
