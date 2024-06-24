@@ -1,0 +1,99 @@
+
+pipeline {
+    environment{
+          def scannerHome = tool "SonarScanner"
+    }
+    agent any
+    
+    
+    parameters {
+        string(name: 'contenedor', defaultValue: 'frontendContable', description: 'Nombre del contenedor')
+        string(name: 'puertoHost', defaultValue: '80', description: 'Puerto del host')
+        string(name: 'puertoContenedor', defaultValue: '80', description: 'Puerto del contenedor')
+        string(name: 'red', defaultValue: 'integracioncontinua_red-poli', description: 'Nombre de la red Docker')
+    }
+
+    stages {
+        stage("Clone Git Repository") {
+            steps {
+                git(
+                    url: "https://github.com/dyclonius/CI-CD_Grupo3.git",
+                    branch: "main",
+                    changelog: true,
+                    poll: true
+                )
+            }
+        }
+        
+        stage("SonarQube Analysis") {
+            steps {
+               
+                withSonarQubeEnv("SonarV10") {
+                    sh "${scannerHome}/bin/sonar-scanner"
+                }
+            }
+        }
+        
+        
+        stage("Deploy Containers") {
+            steps {
+               
+                script {
+                    // Verificar si el contenedor está en ejecución
+                    def containerExists = sh(script: "docker ps -a --filter name=${params.contenedor} --format '{{.Names}}'", returnStdout: true).trim()
+                    echo "Verificando contenedor: ${containerExists}"
+                    if (containerExists) {
+                        echo 'El contenedor ya existe'
+                        // Detener el contenedor si existe
+                        try {
+                            sh "docker stop ${params.contenedor}"
+                        } catch (Exception e) {
+                            echo 'No se pudo detener el contenedor.'
+                        }
+                        // Eliminar el contenedor si existe
+                        try {
+                            sh "docker rm ${params.contenedor}"
+                        } catch (Exception e) {
+                            echo 'No se pudo eliminar el contenedor.'
+                        }
+                    } else {
+                        echo 'El contenedor no existe'
+                    }
+                    
+                    sh 'docker build -t integracioncontinua-portal ./frontend'
+                    
+                    def networkExists = sh(script: "docker network ls --filter name=${params.red} --format '{{.Name}}'", returnStdout: true).trim()
+                    echo "Verificando red: ${networkExists}"
+                    if (networkExists.contains(params.red)) {
+                        echo "La red ${params.red} existe"
+                    } else {
+                        error "La red ${params.red} no está disponible"
+                    }
+                    
+                    sh "docker run -d -p ${params.puertoHost}:${params.puertoContenedor} --network ${params.red} --name ${params.contenedor} integracioncontinua-portal"
+                }
+                
+            }
+        }
+        
+        stage("Integration Test") {
+            steps {
+               
+                   sh  "curl http:\\localhost"
+                
+            }
+        }
+        
+        stage("Stop Containers") {
+            steps {
+               
+                     try {
+                            sh "docker stop ${params.contenedor}"
+                        } catch (Exception e) {
+                            echo 'No se pudo detener el contenedor.'
+                        }
+                
+            }
+        }
+    }
+}
