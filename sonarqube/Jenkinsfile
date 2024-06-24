@@ -78,8 +78,8 @@ pipeline {
         
         stage("Integration Test") {
             steps {
-               
-                   sh  "curl http://localhost"
+                sleep(time:30,unit:"SECONDS")
+                sh  "curl http://localhost"
                 
             }
         }
