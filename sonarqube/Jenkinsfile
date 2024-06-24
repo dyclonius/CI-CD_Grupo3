@@ -78,7 +78,7 @@ pipeline {
         
         stage("Integration Test") {
             steps {
-                println "Pruebas Automaticas"
+                println "Pruebas Automaticas ACTUALIZADO"
             }
         }
         
