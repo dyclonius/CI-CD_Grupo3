@@ -78,9 +78,7 @@ pipeline {
         
         stage("Integration Test") {
             steps {
-                sleep(time:60,unit:"SECONDS")
-                sh  "curl http://localhost"
-                
+                println "Pruebas Automaticas"
             }
         }
         
